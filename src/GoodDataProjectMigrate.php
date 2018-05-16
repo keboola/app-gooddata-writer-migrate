@@ -14,7 +14,8 @@ class GoodDataProjectMigrate
         Client $sourceProjectClient,
         string $sourceProjectPid,
         Client $destinationProjectClient,
-        string $destinationProjectPid
+        string $destinationProjectPid,
+        string $destinationProjectUser
     ): void {
         $exportUri = "/gdc/md/$sourceProjectPid/maintenance/export";
         $params = [
@@ -22,6 +23,9 @@ class GoodDataProjectMigrate
                 'exportUsers' => 0,
                 'exportData' => 1,
                 'crossDataCenterExport' => 1,
+                'authorizedUsers' => [
+                    $destinationProjectUser,
+                ],
             ],
         ];
         $exportResult = $sourceProjectClient->post($exportUri, $params);
@@ -41,6 +45,6 @@ class GoodDataProjectMigrate
         if (empty($importResult['uri'])) {
             throw new UserException(sprintf('Project import failed: %s', json_decode($importResult)));
         }
-        $sourceProjectClient->pollTask($importResult['uri']);
+        $destinationProjectClient->pollTask($importResult['uri']);
     }
 }

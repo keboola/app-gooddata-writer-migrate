@@ -10,6 +10,7 @@ use Keboola\StorageApi\Client;
 use Keboola\StorageApi\Components;
 use \Keboola\GoodData\Client as GoodDataClient;
 use Keboola\StorageApi\Options\Components\Configuration;
+use Keboola\StorageApi\Options\Components\ConfigurationRow;
 
 class GoodDataWriterMigrate
 {
@@ -47,6 +48,27 @@ class GoodDataWriterMigrate
 
         $this->migrateGoodDataProject($sourceWriterConfiguration, $destinationWriterConfiguration);
         $this->updateDestinationConfigurationFromSource($sourceWriterConfiguration, $destinationWriterConfiguration);
+        $this->copyConfigurationRowsFromSource($writerId, $sourceWriterConfiguration['rows']);
+    }
+
+    private function copyConfigurationRowsFromSource(string $destinationConfigId, array $sourceWriterConfigRows): void
+    {
+        $components = new Components($this->destinationProjectSapiClient);
+        $destinationConfiguration = new Configuration();
+        $destinationConfiguration
+            ->setComponentId(self::GOOD_DATA_WRITER_COMPONENT_ID)
+            ->setConfigurationId($destinationConfigId);
+
+        foreach ($sourceWriterConfigRows as $row) {
+            $configurationRow = new ConfigurationRow($destinationConfiguration);
+            $configurationRow
+                ->setConfiguration($row['configuration'])
+                ->setRowId($row['id'])
+                ->setName($row['name'])
+                ->setDescription($row['description'])
+                ->setIsDisabled($row['isDisabled']);
+            $components->addConfigurationRow($configurationRow);
+        }
     }
 
     private function updateDestinationConfigurationFromSource(array $sourceWriterConfiguration, array $destinationWriterConfiguration): void
@@ -104,7 +126,8 @@ class GoodDataWriterMigrate
             $sourceGoodDataClient,
             $sourceWriterConfiguration['configuration']['project']['pid'],
             $destinationGoodDataClient,
-            $destinationWriterConfiguration['configuration']['project']['pid']
+            $destinationWriterConfiguration['configuration']['project']['pid'],
+            $destinationWriterConfiguration['configuration']['user']['login']
         );
     }
 
