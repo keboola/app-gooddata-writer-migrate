@@ -4,48 +4,11 @@ declare(strict_types=1);
 
 namespace Keboola\GoodDataWriterMigrate\Tests;
 
-use function GuzzleHttp\Psr7\_parse_request_uri;
-use Keboola\GoodDataWriterMigrate\GoodDataProjectMigrate;
 use Keboola\GoodDataWriterMigrate\GoodDataWriterMigrate;
-use Keboola\StorageApi\Client;
 use PHPUnit\Framework\TestCase;
 
 class GoodDataWriterMigrateTest extends TestCase
 {
-
-    public function testWriterMigrate(): void
-    {
-        $destinationProjectSapiClient = new Client([
-            'url' => getenv('KBC_DESTINATION_PROJECT_URL'),
-            'token' => getenv('KBC_DESTINATION_PROJECT_TOKEN'),
-        ]);
-        $sourceProjectSapiClient = new Client([
-           'url' => getenv('KBC_SOURCE_PROJECT_URL'),
-           'token' => getenv('KBC_SOURCE_PROJECT_TOKEN'),
-        ]);
-
-        $migrate = new GoodDataWriterMigrate(
-            $destinationProjectSapiClient,
-            parse_url($destinationProjectSapiClient->getApiUrl(), PHP_URL_HOST),
-            parse_url($sourceProjectSapiClient->getApiUrl(), PHP_URL_HOST)
-        );
-
-        $migrate->migrateWriter([
-            'id' => 'test_5',
-            'name' => 'test name',
-            'configuration' => [
-                'user' => [
-                    'login' => '',
-                    'password' => '',
-                    'uid' => '',
-                ],
-                'project' => [
-                    'pid' => '',
-                ],
-            ],
-        ]);
-    }
-
     /**
      * @dataProvider mergeWriterConfigurationProvider
      * @param array $sourceConfiguration
