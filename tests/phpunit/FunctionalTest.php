@@ -23,7 +23,7 @@ class FunctionalTest extends TestCase
     /** @var Temp */
     private $temp;
 
-    public function setUp()
+    public function setUp(): void
     {
         $sourceSapiClient = new Client([
             'url' => getenv('TEST_SOURCE_KBC_URL'),
@@ -58,14 +58,14 @@ class FunctionalTest extends TestCase
         self::cleanupGoodDataWriters($this->sourceGoodDataWriterClient);
     }
 
-    private static function cleanupGoodDataWriters(\Keboola\Writer\GoodData\Client $client)
+    private static function cleanupGoodDataWriters(\Keboola\Writer\GoodData\Client $client): void
     {
         foreach ($client->getWriters() as $writer) {
             $client->deleteWriter($writer['id']);
         }
     }
 
-    public function testSuccessfulRun()
+    public function testSuccessfulRun(): void
     {
         $writerId = uniqid('test');
         $this->sourceGoodDataWriterClient->createWriter($writerId);

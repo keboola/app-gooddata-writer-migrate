@@ -17,13 +17,13 @@ class UtilsTest extends TestCase
      * @param string $expectedServiceUrl
      * @throws \Exception
      */
-    public function testGetKeboolaServiceUrlFound(array $services, string $serviceId, string $expectedServiceUrl)
+    public function testGetKeboolaServiceUrlFound(array $services, string $serviceId, string $expectedServiceUrl): void
     {
         $foundServiceUrl = Utils::getKeboolaServiceUrl($services, $serviceId);
         $this->assertEquals($expectedServiceUrl, $foundServiceUrl);
     }
 
-    public function serviceUrlDataProvider()
+    public function serviceUrlDataProvider(): array
     {
         return [
             [
