@@ -16,8 +16,14 @@ class ConfigDefinition extends BaseConfigDefinition
         /** @noinspection NullPointerExceptionInspection */
         $parametersNode
             ->children()
-                ->scalarNode('sourceProjectUrl')
+                ->scalarNode('sourceKbcUrl')
+                    ->isRequired()
+                    ->cannotBeEmpty()
                     ->defaultValue('https://connection.keboola.com')
+                ->end()
+                ->scalarNode('sourceKbcToken')
+                    ->isRequired()
+                    ->cannotBeEmpty()
                 ->end()
             ->end()
         ;

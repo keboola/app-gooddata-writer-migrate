@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\GoodDataWriterMigrate;
 
+use Guzzle\Http\Exception\ClientErrorResponseException;
 use Keboola\Component\UserException;
 use Keboola\StorageApi\Client;
 use Keboola\StorageApi\Components;
@@ -12,7 +13,7 @@ use Keboola\StorageApi\Options\Components\Configuration;
 
 class GoodDataWriterMigrate
 {
-    private const GOOD_DATA_WRITER_COMPONENT_ID = 'gooddata-writer';
+    public const GOOD_DATA_WRITER_COMPONENT_ID = 'gooddata-writer';
 
     private const GOOD_DATA_URL_MAP = [
       'connection.keboola.com' => 'https://secure.gooddata.com',
@@ -101,9 +102,9 @@ class GoodDataWriterMigrate
         $goodDataMigrate = new GoodDataProjectMigrate();
         $goodDataMigrate->migrate(
             $sourceGoodDataClient,
-            $sourceWriterConfiguration['project']['pid'],
+            $sourceWriterConfiguration['configuration']['project']['pid'],
             $destinationGoodDataClient,
-            $destinationWriterConfiguration['project']['pid']
+            $destinationWriterConfiguration['configuration']['project']['pid']
         );
     }
 
@@ -113,7 +114,13 @@ class GoodDataWriterMigrate
             'url' => sprintf("%s/gooddata-writer", $this->getDestinationProjectSyrupUrl()),
             'token' => $this->destinationProjectSapiClient->getTokenString(),
         ]);
-        $goodDataWriterClient->createWriter($writerId);
+        try {
+            $goodDataWriterClient->createWriter($writerId);
+        } catch (ClientErrorResponseException $e) {
+            throw new UserException(
+                sprintf('Cannot create writer: %s', (string) $e->getResponse()->getBody())
+            );
+        }
     }
 
     private function getCreateWriterRawConfiguration(string $writerId): array
