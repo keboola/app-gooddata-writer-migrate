@@ -1,7 +1,10 @@
 {
     "require": {
         "PHP": "^7.1",
-        "keboola/php-component": "^3.0"
+        "keboola/gooddata-php-client": "dev-martin-symfony-process-4",
+        "keboola/gooddata-writer-php-client": "^3.0",
+        "keboola/php-component": "^3.0",
+        "keboola/storage-api-client": "^10.1"
     },
     "require-dev": {
         "jakub-onderka/php-parallel-lint": "^1.0",
@@ -14,12 +17,12 @@
     },
     "autoload": {
         "psr-4": {
-            "MyComponent\\": "src/"
+            "Keboola\\GoodDataWriterMigrate\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "MyComponent\\Tests\\": "tests/phpunit/"
+            "Keboola\\GoodDataWriterMigrate\\Tests\\": "tests/phpunit/"
         }
     },
     "scripts": {

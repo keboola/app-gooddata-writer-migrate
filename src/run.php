@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Keboola\Component\UserException;
-use MyComponent\Component;
+use GoodDataWriterMigrate\Component;
 
 require __DIR__ . '/../vendor/autoload.php';
 
