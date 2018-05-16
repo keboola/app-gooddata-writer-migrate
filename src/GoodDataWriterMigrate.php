@@ -16,6 +16,8 @@ class GoodDataWriterMigrate
 {
     public const GOOD_DATA_WRITER_COMPONENT_ID = 'gooddata-writer';
 
+    public const SYRUP_SERVICE_ID = 'syrup';
+
     private const GOOD_DATA_URL_MAP = [
       'connection.keboola.com' => 'https://secure.gooddata.com',
       'connection.eu-central-1.keboola.com' => 'https://keboola.eu.gooddata.com',
@@ -165,14 +167,9 @@ class GoodDataWriterMigrate
 
     private function getDestinationProjectSyrupUrl(): string
     {
-        $services = $this->destinationProjectSapiClient->indexAction()['services'];
-
-        $syrupServices = array_values(array_filter($services, function ($service) {
-            return $service['id'] === 'syrup';
-        }));
-        if (empty($syrupServices)) {
-            throw new \Exception('syrup service not found');
-        }
-        return $syrupServices[0]['url'];
+        return Utils::getKeboolaServiceUrl(
+            $this->destinationProjectSapiClient->indexAction()['services'],
+            self::SYRUP_SERVICE_ID
+        );
     }
 }
