@@ -1,7 +1,8 @@
 <?php
 
-namespace Keboola\GoodDataWriterMigrate\Tests;
+declare(strict_types=1);
 
+namespace Keboola\GoodDataWriterMigrate\Tests;
 
 use function GuzzleHttp\Psr7\_parse_request_uri;
 use Keboola\GoodDataWriterMigrate\GoodDataProjectMigrate;
@@ -12,7 +13,7 @@ use PHPUnit\Framework\TestCase;
 class GoodDataWriterMigrateTest extends TestCase
 {
 
-    public function testWriterMigrate()
+    public function testWriterMigrate(): void
     {
         $destinationProjectSapiClient = new Client([
             'url' => getenv('KBC_DESTINATION_PROJECT_URL'),
@@ -36,7 +37,7 @@ class GoodDataWriterMigrateTest extends TestCase
                 'user' => [
                     'login' => '',
                     'password' => '',
-                    'uid' => ''
+                    'uid' => '',
                 ],
                 'project' => [
                     'pid' => '',
@@ -55,7 +56,7 @@ class GoodDataWriterMigrateTest extends TestCase
         array $sourceConfiguration,
         array $destinationConfiguration,
         array $expectedConfiguration
-    ) {
+    ): void {
 
         $this->assertEquals(
             $expectedConfiguration,
@@ -63,7 +64,7 @@ class GoodDataWriterMigrateTest extends TestCase
         );
     }
 
-    public function mergeWriterConfigurationProvider()
+    public function mergeWriterConfigurationProvider(): array
     {
         return [
           [

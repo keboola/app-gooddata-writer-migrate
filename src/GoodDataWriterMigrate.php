@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\GoodDataWriterMigrate;
 
 use Keboola\Component\UserException;
@@ -30,8 +32,7 @@ class GoodDataWriterMigrate
         Client $destinationProjectSapiClient,
         string $destinationProjectStackId,
         string $sourceProjectStackId
-    )
-    {
+    ) {
         $this->destinationProjectSapiClient = $destinationProjectSapiClient;
         $this->destinationProjectStackId = $destinationProjectStackId;
         $this->sourceProjectStackId = $sourceProjectStackId;
@@ -47,7 +48,7 @@ class GoodDataWriterMigrate
         $this->updateDestinationConfigurationFromSource($sourceWriterConfiguration, $destinationWriterConfiguration);
     }
 
-    private function updateDestinationConfigurationFromSource(array $sourceWriterConfiguration, array $destinationWriterConfiguration)
+    private function updateDestinationConfigurationFromSource(array $sourceWriterConfiguration, array $destinationWriterConfiguration): void
     {
         $components = new Components($this->destinationProjectSapiClient);
         $updatedConfigurationData = self::mergeDestinationConfiguration(

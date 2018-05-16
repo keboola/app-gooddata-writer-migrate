@@ -15,7 +15,7 @@ class GoodDataProjectMigrate
         string $sourceProjectPid,
         Client $destinationProjectClient,
         string $destinationProjectPid
-    ) {
+    ): void {
         $exportUri = "/gdc/md/$sourceProjectPid/maintenance/export";
         $params = [
             'exportProject' => [
