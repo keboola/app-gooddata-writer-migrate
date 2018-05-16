@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7de3e0749bc2b65dd23f296db3925fdf",
+    "content-hash": "80ee102f2907c2fd0e468ff1a0df2e82",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -396,16 +396,16 @@
         },
         {
             "name": "keboola/gooddata-php-client",
-            "version": "dev-martin-symfony-process-4",
+            "version": "2.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/gooddata-php-client.git",
-                "reference": "da2404c54f038da85261c1c02a032701229f6d37"
+                "reference": "b5abb865de1496eba6d2f64f437c73a4fa652554"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/gooddata-php-client/zipball/da2404c54f038da85261c1c02a032701229f6d37",
-                "reference": "da2404c54f038da85261c1c02a032701229f6d37",
+                "url": "https://api.github.com/repos/keboola/gooddata-php-client/zipball/b5abb865de1496eba6d2f64f437c73a4fa652554",
+                "reference": "b5abb865de1496eba6d2f64f437c73a4fa652554",
                 "shasum": ""
             },
             "require": {
@@ -443,7 +443,7 @@
             "keywords": [
                 "gooddata"
             ],
-            "time": "2018-05-16T11:09:21+00:00"
+            "time": "2018-05-16T14:34:27+00:00"
         },
         {
             "name": "keboola/gooddata-writer-php-client",
@@ -2996,9 +2996,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "keboola/gooddata-php-client": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

@@ -1,7 +1,7 @@
 {
     "require": {
         "PHP": "^7.1",
-        "keboola/gooddata-php-client": "dev-martin-symfony-process-4",
+        "keboola/gooddata-php-client": "^2.7",
         "keboola/gooddata-writer-php-client": "^3.0",
         "keboola/php-component": "^3.0",
         "keboola/storage-api-client": "^10.1"
