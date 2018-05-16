@@ -6,7 +6,7 @@ services:
       - ./:/code
       - ./data:/data
     environment:
-      - KBC_DESTINATION_PROJECT_URL
-      - KBC_DESTINATION_PROJECT_TOKEN
-      - KBC_SOURCE_PROJECT_URL
-      - KBC_SOURCE_PROJECT_TOKEN
+      - TEST_SOURCE_KBC_URL
+      - TEST_SOURCE_KBC_TOKEN
+      - TEST_DEST_KBC_URL
+      - TEST_DEST_KBC_TOKEN
