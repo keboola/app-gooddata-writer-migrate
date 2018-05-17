@@ -98,6 +98,7 @@ class FunctionalTest extends TestCase
         $this->sourceGoodDataWriterClient->createWriter($writerId, [
             'authToken' => GoodDataWriterMigrate::WRITER_AUTH_TOKEN_DEMO,
         ]);
+        $sourceWriter = $this->sourceGoodDataWriterClient->getWriter($writerId);
 
         // prepare config
         $fileSystem = new Filesystem();
@@ -118,6 +119,9 @@ class FunctionalTest extends TestCase
         // check results
         $this->assertEquals(0, $process->getExitCode());
         $this->assertEmpty($process->getErrorOutput());
+
+        $destWriter = $this->destinationGoodDataWriterClient->getWriter($writerId);
+        $this->assertEquals($sourceWriter['project']['authToken'], $destWriter['project']['authToken']);
     }
 
     private function createTestProcess(): Process

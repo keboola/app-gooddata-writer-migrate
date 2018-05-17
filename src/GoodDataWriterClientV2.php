@@ -40,6 +40,12 @@ class GoodDataWriterClientV2
         return $this->client->waitForJob($job['url']);
     }
 
+    public function getWriter(string $writerId): array
+    {
+        $request = $this->client->get(sprintf('v2/%s', $writerId));
+        return $this->client->send($request)->json();
+    }
+
     public function getWriters(): array
     {
         $request = $this->client->get('v2');
