@@ -7,7 +7,6 @@ namespace Keboola\GoodDataWriterMigrate\Tests;
 use Keboola\Csv\CsvFile;
 use Keboola\GoodDataWriterMigrate\GoodDataWriterClientV2;
 use Keboola\GoodDataWriterMigrate\GoodDataWriterMigrate;
-use Keboola\GoodDataWriterMigrate\Utils;
 use Keboola\StorageApi\Client;
 use Keboola\Temp\Temp;
 use PHPUnit\Framework\TestCase;
@@ -41,27 +40,17 @@ class FunctionalTest extends TestCase
             'url' => getenv('TEST_SOURCE_KBC_URL'),
             'token' => getenv('TEST_SOURCE_KBC_TOKEN'),
         ]);
-        $sourceSyrupUrl = Utils::getKeboolaServiceUrl(
-            $this->sourceSapiClient->indexAction()['services'],
-            GoodDataWriterMigrate::SYRUP_SERVICE_ID
+        $this->sourceGoodDataWriterClient = GoodDataWriterClientV2::createFromStorageClient(
+            $this->sourceSapiClient
         );
-        $this->sourceGoodDataWriterClient = GoodDataWriterClientV2::factory([
-            'url' => sprintf("%s/gooddata-writer", $sourceSyrupUrl),
-            'token' => getenv('TEST_SOURCE_KBC_TOKEN'),
-        ]);
 
         $this->destinationSapiClient = new Client([
             'url' => getenv('TEST_DEST_KBC_URL'),
             'token' => getenv('TEST_DEST_KBC_TOKEN'),
         ]);
-        $destinationSyrupUrl = Utils::getKeboolaServiceUrl(
-            $this->destinationSapiClient->indexAction()['services'],
-            GoodDataWriterMigrate::SYRUP_SERVICE_ID
+        $this->destinationGoodDataWriterClient = GoodDataWriterClientV2::createFromStorageClient(
+            $this->destinationSapiClient
         );
-        $this->destinationGoodDataWriterClient = GoodDataWriterClientV2::factory([
-            'url' => sprintf("%s/gooddata-writer", $destinationSyrupUrl),
-            'token' => getenv('TEST_DEST_KBC_TOKEN'),
-        ]);
 
         $this->temp = new Temp('app-gooddata-writer-migrate');
         $this->temp->initRunFolder();

@@ -6,9 +6,12 @@ namespace Keboola\GoodDataWriterMigrate;
 
 use Keboola\Component\UserException;
 use Keboola\Writer\GoodData\Client as GoodDataWriterClient;
+use Keboola\StorageApi\Client as SapiClient;
 
 class GoodDataWriterClientV2
 {
+    private const SYRUP_SERVICE_ID = 'syrup';
+
     /** @var GoodDataWriterClient  */
     private $client;
 
@@ -20,6 +23,18 @@ class GoodDataWriterClientV2
     public static function factory(array $config): self
     {
         return new self(GoodDataWriterClient::factory($config));
+    }
+
+    public static function createFromStorageClient(SapiClient $sapiClient): GoodDataWriterClientV2
+    {
+        $sourceSyrupUrl = Utils::getKeboolaServiceUrl(
+            $sapiClient->indexAction()['services'],
+            self::SYRUP_SERVICE_ID
+        );
+        return self::factory([
+            'url' => sprintf("%s/gooddata-writer", $sourceSyrupUrl),
+            'token' => $sapiClient->getTokenString(),
+        ]);
     }
 
     public function createWriter(string $writerId, ?array $params = []): array

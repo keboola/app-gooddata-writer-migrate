@@ -16,8 +16,6 @@ class GoodDataWriterMigrate
 {
     public const GOOD_DATA_WRITER_COMPONENT_ID = 'gooddata-writer';
 
-    public const SYRUP_SERVICE_ID = 'syrup';
-
     public const WRITER_AUTH_TOKEN_DEMO = 'keboola_demo';
 
     public const WRITER_AUTH_TOKEN_PRODUCTION = 'keboola_production';
@@ -30,8 +28,11 @@ class GoodDataWriterMigrate
     /** @var Client  */
     private $destinationProjectSapiClient;
 
-    /** @var Client  */
-    private $sourceProjectSapiClient;
+    /** @var GoodDataWriterClientV2 */
+    private $sourceProjecGoodDataWriterClient;
+
+    /** @var GoodDataWriterClientV2 */
+    private $destinationProjectGoodDataWriterClient;
 
     /** @var string */
     private $sourceProjectStackId;
@@ -41,12 +42,14 @@ class GoodDataWriterMigrate
 
     public function __construct(
         Client $destinationProjectSapiClient,
-        Client $sourceProjectSapiClient,
+        GoodDataWriterClientV2 $destinationProjectGoodDataWriterClient,
+        GoodDataWriterClientV2 $sourceProjectGoodDataWriterClient,
         string $destinationProjectStackId,
         string $sourceProjectStackId
     ) {
         $this->destinationProjectSapiClient = $destinationProjectSapiClient;
-        $this->sourceProjectSapiClient = $sourceProjectSapiClient;
+        $this->destinationProjectGoodDataWriterClient = $destinationProjectGoodDataWriterClient;
+        $this->sourceProjecGoodDataWriterClient = $sourceProjectGoodDataWriterClient;
         $this->destinationProjectStackId = $destinationProjectStackId;
         $this->sourceProjectStackId = $sourceProjectStackId;
     }
@@ -158,12 +161,8 @@ class GoodDataWriterMigrate
 
     private function createNewGoodDataWriterInDestinationProject(string $writerId, string $authToken): void
     {
-        $goodDataWriterClient = GoodDataWriterClientV2::factory([
-            'url' => sprintf("%s/gooddata-writer", $this->getDestinationProjectSyrupUrl()),
-            'token' => $this->destinationProjectSapiClient->getTokenString(),
-        ]);
         try {
-            $goodDataWriterClient->createWriter($writerId, [
+            $this->destinationProjectGoodDataWriterClient->createWriter($writerId, [
                 'authToken' => $authToken,
             ]);
         } catch (ClientErrorResponseException $e) {
@@ -175,11 +174,7 @@ class GoodDataWriterMigrate
 
     private function getSourceWriterConfiguration(string $writerId): array
     {
-        $goodDataWriterClient = GoodDataWriterClientV2::factory([
-            'url' => sprintf("%s/gooddata-writer", $this->getSourceProjectSyrupUrl()),
-            'token' => $this->sourceProjectSapiClient->getTokenString(),
-        ]);
-        return $goodDataWriterClient->getWriter($writerId);
+        return $this->sourceProjecGoodDataWriterClient->getWriter($writerId);
     }
 
     private function getCreatedWriterSapiConfiguration(string $writerId): array
@@ -197,21 +192,5 @@ class GoodDataWriterMigrate
             throw new UserException(sprintf('GoodData host not found for stack %s', $stackId));
         }
         return self::GOOD_DATA_URL_MAP[$stackId];
-    }
-
-    private function getDestinationProjectSyrupUrl(): string
-    {
-        return Utils::getKeboolaServiceUrl(
-            $this->destinationProjectSapiClient->indexAction()['services'],
-            self::SYRUP_SERVICE_ID
-        );
-    }
-
-    private function getSourceProjectSyrupUrl():string
-    {
-        return Utils::getKeboolaServiceUrl(
-            $this->sourceProjectSapiClient->indexAction()['services'],
-            self::SYRUP_SERVICE_ID
-        );
     }
 }
