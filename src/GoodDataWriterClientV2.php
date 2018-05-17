@@ -99,6 +99,24 @@ class GoodDataWriterClientV2
         return $this->client->send($request)->json();
     }
 
+    public function addWriterDateDimension(string $writerId, array $config): void
+    {
+        $request = $this->client->post(
+            sprintf('v2/%s/date-dimensions', $writerId),
+            null,
+            json_encode($config)
+        );
+        $this->client->send($request);
+    }
+
+    public function listWriterDateDimensions(string $writerId): array
+    {
+        $request = $this->client->get(
+            sprintf('v2/%s/date-dimensions', $writerId)
+        );
+        return $this->client->send($request)->json();
+    }
+
     private function waitForJob(\Guzzle\Http\Message\RequestInterface $request): array
     {
         $job = $this->client->send($request)->json();

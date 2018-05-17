@@ -113,6 +113,24 @@ class FunctionalTest extends TestCase
         ]);
         $sourceWriter = $this->sourceGoodDataWriterClient->getWriter($writerId);
 
+        $this->sourceGoodDataWriterClient->addWriterDateDimension(
+            $writerId,
+            [
+                'name' => 'Keboola',
+                'template' => 'keboola',
+                'includeTime' => true,
+            ]
+        );
+
+        $this->sourceGoodDataWriterClient->addWriterDateDimension(
+            $writerId,
+            [
+                'name' => 'Gd',
+                'template' => 'gooddata',
+                'includeTime' => true,
+            ]
+        );
+
         $this->sourceGoodDataWriterClient->addTableToWriter(
             $writerId,
             $sourceTableId
@@ -142,6 +160,7 @@ class FunctionalTest extends TestCase
         $this->sourceGoodDataWriterClient->updateWriterModel($writerId, $sourceWriter['project']['pid']);
         $this->sourceGoodDataWriterClient->loadWriterDataMulti($writerId, $sourceWriter['project']['pid']);
         $sourceWriterTables = $this->sourceGoodDataWriterClient->listWriterTables($writerId);
+        $sourceWriterDateDimensions = $this->sourceGoodDataWriterClient->listWriterDateDimensions($writerId);
 
         // prepare config
         $fileSystem = new Filesystem();
@@ -164,12 +183,17 @@ class FunctionalTest extends TestCase
         $this->assertEmpty($process->getErrorOutput());
 
         $destWriter = $this->destinationGoodDataWriterClient->getWriter($writerId);
+        $destWriterDateDimensions = $this->destinationGoodDataWriterClient->listWriterDateDimensions($writerId);
         $destWriterTables = $this->destinationGoodDataWriterClient->listWriterTables($writerId);
+
         $this->assertEquals($sourceWriter['project']['authToken'], $destWriter['project']['authToken']);
         $this->assertEquals('ready', $sourceWriter['status']);
         $this->assertEquals('ready', $destWriter['status']);
         $this->assertNotEquals($sourceWriter['project']['pid'], $destWriter['project']['pid']);
         $this->assertNotEquals($sourceWriter['user']['id'], $destWriter['project']['id']);
+
+        $this->assertCount(2, $sourceWriterDateDimensions);
+        $this->assertEquals($sourceWriterDateDimensions, $destWriterDateDimensions);
 
         $this->assertCount(1, $sourceWriterTables);
         $this->assertCount(1, $destWriterTables);
