@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Keboola\GoodDataWriterMigrate;
 
@@ -34,7 +35,9 @@ class GoodDataWriterClientV2
         $job = $this->client->send($request)->json();
 
         if (!isset($job['url'])) {
-            throw new UserException('Create writer job returned unexpected result: ' . json_encode($job, JSON_PRETTY_PRINT));
+            throw new UserException(
+                'Create writer job returned unexpected result: ' . json_encode($job, JSON_PRETTY_PRINT)
+            );
         }
 
         return $this->client->waitForJob($job['url']);
@@ -42,7 +45,7 @@ class GoodDataWriterClientV2
 
     public function getWriter(string $writerId): array
     {
-        $request = $this->client->get(sprintf('v2/%s', $writerId));
+        $request = $this->client->get(sprintf('v2/%s?include=project,user', $writerId));
         return $this->client->send($request)->json();
     }
 

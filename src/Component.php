@@ -29,6 +29,7 @@ class Component extends BaseComponent
 
         $writerMigrate = new GoodDataWriterMigrate(
             $destinationProjectClient,
+            $sourceProjectClient,
             parse_url($destinationProjectClient->getApiUrl(), PHP_URL_HOST),
             parse_url($sourceProjectClient->getApiUrl(), PHP_URL_HOST)
         );

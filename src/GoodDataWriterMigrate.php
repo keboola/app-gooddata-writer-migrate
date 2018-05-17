@@ -30,6 +30,9 @@ class GoodDataWriterMigrate
     /** @var Client  */
     private $destinationProjectSapiClient;
 
+    /** @var Client  */
+    private $sourceProjectSapiClient;
+
     /** @var string */
     private $sourceProjectStackId;
 
@@ -38,23 +41,33 @@ class GoodDataWriterMigrate
 
     public function __construct(
         Client $destinationProjectSapiClient,
+        Client $sourceProjectSapiClient,
         string $destinationProjectStackId,
         string $sourceProjectStackId
     ) {
         $this->destinationProjectSapiClient = $destinationProjectSapiClient;
+        $this->sourceProjectSapiClient = $sourceProjectSapiClient;
         $this->destinationProjectStackId = $destinationProjectStackId;
         $this->sourceProjectStackId = $sourceProjectStackId;
     }
 
-    public function migrateWriter(array $sourceWriterConfiguration): void
+    public function migrateWriter(array $sourceWriterSapiConfiguration): void
     {
-        $writerId = $sourceWriterConfiguration['id'];
-        $this->createNewGoodDataWriterInDestinationProject($writerId);
-        $destinationWriterConfiguration = $this->getCreateWriterRawConfiguration($writerId);
+        $writerId = $sourceWriterSapiConfiguration['id'];
+        $sourceWriterConfiguration = $this->getSourceWriterConfiguration($writerId);
 
-        $this->migrateGoodDataProject($sourceWriterConfiguration, $destinationWriterConfiguration);
-        $this->updateDestinationConfigurationFromSource($sourceWriterConfiguration, $destinationWriterConfiguration);
-        $this->copyConfigurationRowsFromSource($writerId, $sourceWriterConfiguration['rows']);
+        $this->createNewGoodDataWriterInDestinationProject(
+            $writerId,
+            $sourceWriterConfiguration['project']['authToken']
+        );
+        $destinationWriterConfiguration = $this->getCreatedWriterSapiConfiguration($writerId);
+
+        $this->migrateGoodDataProject($sourceWriterSapiConfiguration, $destinationWriterConfiguration);
+        $this->updateDestinationConfigurationFromSource(
+            $sourceWriterSapiConfiguration,
+            $destinationWriterConfiguration
+        );
+        $this->copyConfigurationRowsFromSource($writerId, $sourceWriterSapiConfiguration['rows']);
     }
 
     private function copyConfigurationRowsFromSource(string $destinationConfigId, array $sourceWriterConfigRows): void
@@ -78,79 +91,81 @@ class GoodDataWriterMigrate
     }
 
     private function updateDestinationConfigurationFromSource(
-        array $sourceWriterConfiguration,
-        array $destinationWriterConfiguration
+        array $sourceWriterSapiConfiguration,
+        array $destinationWriterSapiConfiguration
     ): void {
         $components = new Components($this->destinationProjectSapiClient);
         $updatedConfigurationData = self::mergeDestinationConfiguration(
-            $sourceWriterConfiguration['configuration'],
-            $destinationWriterConfiguration['configuration']
+            $sourceWriterSapiConfiguration['configuration'],
+            $destinationWriterSapiConfiguration['configuration']
         );
         $configOptions = new Configuration();
         $configOptions
             ->setComponentId(self::GOOD_DATA_WRITER_COMPONENT_ID)
-            ->setConfigurationId($destinationWriterConfiguration['id'])
+            ->setConfigurationId($destinationWriterSapiConfiguration['id'])
             ->setConfiguration($updatedConfigurationData);
         $components->updateConfiguration($configOptions);
     }
 
     public static function mergeDestinationConfiguration(
-        array $sourceWriterConfiguration,
-        array $destinationWriterConfiguration
+        array $sourceWriterSapiConfiguration,
+        array $destinationWriterSapiConfiguration
     ): array {
         return array_replace_recursive(
-            $sourceWriterConfiguration,
+            $sourceWriterSapiConfiguration,
             [
                 'user' => [
-                    'login' => $destinationWriterConfiguration['user']['login'],
-                    'password' => $destinationWriterConfiguration['user']['password'],
-                    'uid' => $destinationWriterConfiguration['user']['uid'],
+                    'login' => $destinationWriterSapiConfiguration['user']['login'],
+                    'password' => $destinationWriterSapiConfiguration['user']['password'],
+                    'uid' => $destinationWriterSapiConfiguration['user']['uid'],
                 ],
                 'project' => [
-                    'pid' => $destinationWriterConfiguration['project']['pid'],
+                    'pid' => $destinationWriterSapiConfiguration['project']['pid'],
                 ],
             ]
         );
     }
 
     private function migrateGoodDataProject(
-        array $sourceWriterConfiguration,
-        array $destinationWriterConfiguration
+        array $sourceWriterSapiConfiguration,
+        array $destinationWriterSapiConfiguration
     ): void {
         $sourceGoodDataClient = new GoodDataClient(
             $this->getGoodDataHostForKbcStack($this->sourceProjectStackId)
         );
         $sourceGoodDataClient->login(
-            $sourceWriterConfiguration['configuration']['user']['login'],
-            $sourceWriterConfiguration['configuration']['user']['password']
+            $sourceWriterSapiConfiguration['configuration']['user']['login'],
+            $sourceWriterSapiConfiguration['configuration']['user']['password']
         );
 
         $destinationGoodDataClient = new GoodDataClient(
             $this->getGoodDataHostForKbcStack($this->destinationProjectStackId)
         );
         $destinationGoodDataClient->login(
-            $destinationWriterConfiguration['configuration']['user']['login'],
-            $destinationWriterConfiguration['configuration']['user']['password']
+            $destinationWriterSapiConfiguration['configuration']['user']['login'],
+            $destinationWriterSapiConfiguration['configuration']['user']['password']
         );
 
         $goodDataMigrate = new GoodDataProjectMigrate();
         $goodDataMigrate->migrate(
             $sourceGoodDataClient,
-            $sourceWriterConfiguration['configuration']['project']['pid'],
+            $sourceWriterSapiConfiguration['configuration']['project']['pid'],
             $destinationGoodDataClient,
-            $destinationWriterConfiguration['configuration']['project']['pid'],
-            $destinationWriterConfiguration['configuration']['user']['login']
+            $destinationWriterSapiConfiguration['configuration']['project']['pid'],
+            $destinationWriterSapiConfiguration['configuration']['user']['login']
         );
     }
 
-    private function createNewGoodDataWriterInDestinationProject(string $writerId): void
+    private function createNewGoodDataWriterInDestinationProject(string $writerId, string $authToken): void
     {
         $goodDataWriterClient = GoodDataWriterClientV2::factory([
             'url' => sprintf("%s/gooddata-writer", $this->getDestinationProjectSyrupUrl()),
             'token' => $this->destinationProjectSapiClient->getTokenString(),
         ]);
         try {
-            $goodDataWriterClient->createWriter($writerId);
+            $goodDataWriterClient->createWriter($writerId, [
+                'authToken' => $authToken,
+            ]);
         } catch (ClientErrorResponseException $e) {
             throw new UserException(
                 sprintf('Cannot create writer: %s', (string) $e->getResponse()->getBody())
@@ -158,7 +173,16 @@ class GoodDataWriterMigrate
         }
     }
 
-    private function getCreateWriterRawConfiguration(string $writerId): array
+    private function getSourceWriterConfiguration(string $writerId): array
+    {
+        $goodDataWriterClient = GoodDataWriterClientV2::factory([
+            'url' => sprintf("%s/gooddata-writer", $this->getSourceProjectSyrupUrl()),
+            'token' => $this->sourceProjectSapiClient->getTokenString(),
+        ]);
+        return $goodDataWriterClient->getWriter($writerId);
+    }
+
+    private function getCreatedWriterSapiConfiguration(string $writerId): array
     {
         $destinationComponents = new Components($this->destinationProjectSapiClient);
         return $destinationComponents->getConfiguration(
@@ -179,6 +203,14 @@ class GoodDataWriterMigrate
     {
         return Utils::getKeboolaServiceUrl(
             $this->destinationProjectSapiClient->indexAction()['services'],
+            self::SYRUP_SERVICE_ID
+        );
+    }
+
+    private function getSourceProjectSyrupUrl():string
+    {
+        return Utils::getKeboolaServiceUrl(
+            $this->sourceProjectSapiClient->indexAction()['services'],
             self::SYRUP_SERVICE_ID
         );
     }

@@ -77,7 +77,7 @@ class FunctionalTest extends TestCase
 
     private static function cleanupBuckets(Client $client): void
     {
-        foreach ($client->listBuckets() as  $bucket) {
+        foreach ($client->listBuckets() as $bucket) {
             $client->dropBucket($bucket['id'], [
                 'force' => true,
             ]);
