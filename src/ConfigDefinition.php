@@ -21,7 +21,7 @@ class ConfigDefinition extends BaseConfigDefinition
                     ->cannotBeEmpty()
                     ->defaultValue('https://connection.keboola.com')
                 ->end()
-                ->scalarNode('sourceKbcToken')
+                ->scalarNode('#sourceKbcToken')
                     ->isRequired()
                     ->cannotBeEmpty()
                 ->end()

@@ -15,6 +15,6 @@ class Config extends BaseConfig
 
     public function getSourceProjectToken(): string
     {
-        return $this->getValue(['parameters', 'sourceKbcToken']);
+        return $this->getValue(['parameters', '#sourceKbcToken']);
     }
 }

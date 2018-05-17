@@ -168,7 +168,7 @@ class FunctionalTest extends TestCase
             $this->temp->getTmpFolder() . '/config.json',
             \json_encode([
                 'parameters' => [
-                    'sourceKbcToken' => getenv('TEST_SOURCE_KBC_TOKEN'),
+                    '#sourceKbcToken' => getenv('TEST_SOURCE_KBC_TOKEN'),
                     'sourceKbcUrl' => getenv('TEST_SOURCE_KBC_URL'),
                 ],
             ])
