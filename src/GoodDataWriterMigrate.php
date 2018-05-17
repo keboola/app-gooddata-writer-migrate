@@ -18,6 +18,10 @@ class GoodDataWriterMigrate
 
     public const SYRUP_SERVICE_ID = 'syrup';
 
+    public const WRITER_AUTH_TOKEN_DEMO = 'keboola_demo';
+
+    public const WRITER_AUTH_TOKEN_PRODUCTION = 'keboola_production';
+
     private const GOOD_DATA_URL_MAP = [
       'connection.keboola.com' => 'https://secure.gooddata.com',
       'connection.eu-central-1.keboola.com' => 'https://keboola.eu.gooddata.com',
@@ -141,7 +145,7 @@ class GoodDataWriterMigrate
 
     private function createNewGoodDataWriterInDestinationProject(string $writerId): void
     {
-        $goodDataWriterClient = \Keboola\Writer\GoodData\Client::factory([
+        $goodDataWriterClient = GoodDataWriterClientV2::factory([
             'url' => sprintf("%s/gooddata-writer", $this->getDestinationProjectSyrupUrl()),
             'token' => $this->destinationProjectSapiClient->getTokenString(),
         ]);

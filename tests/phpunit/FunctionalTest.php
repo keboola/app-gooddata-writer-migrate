@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Keboola\GoodDataWriterMigrate\Tests;
 
+use Keboola\Csv\CsvFile;
+use Keboola\GoodDataWriterMigrate\GoodDataWriterClientV2;
 use Keboola\GoodDataWriterMigrate\GoodDataWriterMigrate;
 use Keboola\GoodDataWriterMigrate\Utils;
 use Keboola\StorageApi\Client;
@@ -14,26 +16,33 @@ use Symfony\Component\Process\Process;
 
 class FunctionalTest extends TestCase
 {
-    /** @var \Keboola\Writer\GoodData\Client */
+    private const TEST_BUCKET_NAME = 'test';
+
+    private const TEST_TABLE_NAME = 'test';
+
+    /** @var GoodDataWriterClientV2 */
     private $sourceGoodDataWriterClient;
 
-    /** @var \Keboola\Writer\GoodData\Client */
+    /** @var GoodDataWriterClientV2 */
     private $destinationGoodDataWriterClient;
+
+    /** @var Client */
+    private $sourceSapiClient;
 
     /** @var Temp */
     private $temp;
 
     public function setUp(): void
     {
-        $sourceSapiClient = new Client([
+        $this->sourceSapiClient = new Client([
             'url' => getenv('TEST_SOURCE_KBC_URL'),
             'token' => getenv('TEST_SOURCE_KBC_TOKEN'),
         ]);
         $sourceSyrupUrl = Utils::getKeboolaServiceUrl(
-            $sourceSapiClient->indexAction()['services'],
+            $this->sourceSapiClient->indexAction()['services'],
             GoodDataWriterMigrate::SYRUP_SERVICE_ID
         );
-        $this->sourceGoodDataWriterClient = \Keboola\Writer\GoodData\Client::factory([
+        $this->sourceGoodDataWriterClient = GoodDataWriterClientV2::factory([
             'url' => sprintf("%s/gooddata-writer", $sourceSyrupUrl),
             'token' => getenv('TEST_SOURCE_KBC_TOKEN'),
         ]);
@@ -46,7 +55,7 @@ class FunctionalTest extends TestCase
             $destinationSapiClient->indexAction()['services'],
             GoodDataWriterMigrate::SYRUP_SERVICE_ID
         );
-        $this->destinationGoodDataWriterClient = \Keboola\Writer\GoodData\Client::factory([
+        $this->destinationGoodDataWriterClient = GoodDataWriterClientV2::factory([
             'url' => sprintf("%s/gooddata-writer", $destinationSyrupUrl),
             'token' => getenv('TEST_DEST_KBC_TOKEN'),
         ]);
@@ -54,22 +63,43 @@ class FunctionalTest extends TestCase
         $this->temp = new Temp('app-gooddata-writer-migrate');
         $this->temp->initRunFolder();
 
+        self::cleanupBuckets($this->sourceSapiClient);
         self::cleanupGoodDataWriters($this->destinationGoodDataWriterClient);
         self::cleanupGoodDataWriters($this->sourceGoodDataWriterClient);
     }
 
-    private static function cleanupGoodDataWriters(\Keboola\Writer\GoodData\Client $client): void
+    private static function cleanupGoodDataWriters(GoodDataWriterClientV2 $client): void
     {
         foreach ($client->getWriters() as $writer) {
             $client->deleteWriter($writer['id']);
         }
     }
 
+    private static function cleanupBuckets(Client $client): void
+    {
+        foreach ($client->listBuckets() as  $bucket) {
+            $client->dropBucket($bucket['id'], [
+                'force' => true,
+            ]);
+        }
+    }
+
     public function testSuccessfulRun(): void
     {
-        $writerId = uniqid('test');
-        $this->sourceGoodDataWriterClient->createWriter($writerId);
+        // prepare initials setup in project
+        $sourceBucketId= $this->sourceSapiClient->createBucket(self::TEST_BUCKET_NAME, Client::STAGE_IN);
+        $this->sourceSapiClient->createTableAsync(
+            $sourceBucketId,
+            self::TEST_TABLE_NAME,
+            new CsvFile(__DIR__ . '/data/radio.csv')
+        );
 
+        $writerId = uniqid('test');
+        $this->sourceGoodDataWriterClient->createWriter($writerId, [
+            'authToken' => GoodDataWriterMigrate::WRITER_AUTH_TOKEN_DEMO,
+        ]);
+
+        // prepare config
         $fileSystem = new Filesystem();
         $fileSystem->dumpFile(
             $this->temp->getTmpFolder() . '/config.json',
@@ -81,9 +111,11 @@ class FunctionalTest extends TestCase
             ])
         );
 
+        // execute component
         $process = $this->createTestProcess();
         $process->mustRun();
 
+        // check results
         $this->assertEquals(0, $process->getExitCode());
         $this->assertEmpty($process->getErrorOutput());
     }
