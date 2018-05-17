@@ -170,6 +170,9 @@ class FunctionalTest extends TestCase
         // check migration results
         $this->assertEquals(0, $process->getExitCode());
         $this->assertEmpty($process->getErrorOutput());
+        $this->assertContains('Migrating GoodData writers', $process->getOutput());
+        $this->assertContains("Writer $writerId migration started", $process->getOutput());
+        $this->assertContains("Writer $writerId migration done", $process->getOutput());
 
         $destWriter = $this->destinationGoodDataWriterClient->getWriter($writerId);
         $destWriterDateDimensions = $this->destinationGoodDataWriterClient->listWriterDateDimensions($writerId);

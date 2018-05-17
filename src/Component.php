@@ -15,17 +15,18 @@ class Component extends BaseComponent
     {
         /** @var Config $config */
         $config = $this->getConfig();
-        $sourceProjectClient = new Client([
+        $logger = $this->getLogger();
+
+        $sourceProjectClient = $this->createStorageClient([
             'url' => $config->getSourceProjectUrl(),
             'token' => $config->getSourceProjectToken(),
         ]);
-        $sourceProjectClient->setRunId($this->getKbcRunId());
+        $sourceTokenInfo = $sourceProjectClient->verifyToken();
 
-        $destinationProjectClient = new Client([
+        $destinationProjectClient = $this->createStorageClient([
             'url' => getenv('KBC_URL'),
             'token' => getenv('KBC_TOKEN'),
         ]);
-        $destinationProjectClient->setRunId($this->getKbcRunId());
 
         $writerMigrate = new GoodDataWriterMigrate(
             $destinationProjectClient,
@@ -35,14 +36,29 @@ class Component extends BaseComponent
             parse_url($sourceProjectClient->getApiUrl(), PHP_URL_HOST)
         );
 
+        $logger->info(sprintf(
+            'Migrating GoodData writers from project %s (%d)',
+            $sourceTokenInfo['owner']['name'],
+            $sourceTokenInfo['owner']['id']
+        ));
+
         $writersToMigrate = (new Components($sourceProjectClient))->listComponentConfigurations(
             (new ListComponentConfigurationsOptions())
                 ->setComponentId(GoodDataWriterMigrate::GOOD_DATA_WRITER_COMPONENT_ID)
         );
 
         foreach ($writersToMigrate as $writerConfigurationWithRows) {
+            $logger->info(sprintf('Writer %s migration started', $writerConfigurationWithRows['id']));
             $writerMigrate->migrateWriter($writerConfigurationWithRows);
+            $logger->info(sprintf('Writer %s migration done', $writerConfigurationWithRows['id']));
         }
+    }
+
+    private function createStorageClient(array $params): Client
+    {
+        $client = new Client($params);
+        $client->setRunId($this->getKbcRunId());
+        return $client;
     }
 
     protected function getConfigClass(): string

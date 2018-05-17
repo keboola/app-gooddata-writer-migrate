@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Keboola\GoodDataWriterMigrate;
 
-use Keboola\StorageApi\Client as SapiClient;
-
-
 class Utils
 {
     public static function getKeboolaServiceUrl(array $services, string $serviceId): string
