@@ -99,7 +99,7 @@ class GoodDataWriterClientV2
         return $this->client->send($request)->json();
     }
 
-    private function waitForJob(\Guzzle\Http\Message\RequestInterface $request)
+    private function waitForJob(\Guzzle\Http\Message\RequestInterface $request): array
     {
         $job = $this->client->send($request)->json();
 
