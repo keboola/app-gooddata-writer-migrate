@@ -73,8 +73,10 @@ class GoodDataWriterMigrate
         }
     }
 
-    private function updateDestinationConfigurationFromSource(array $sourceWriterConfiguration, array $destinationWriterConfiguration): void
-    {
+    private function updateDestinationConfigurationFromSource(
+        array $sourceWriterConfiguration,
+        array $destinationWriterConfiguration
+    ): void {
         $components = new Components($this->destinationProjectSapiClient);
         $updatedConfigurationData = self::mergeDestinationConfiguration(
             $sourceWriterConfiguration['configuration'],
@@ -88,8 +90,10 @@ class GoodDataWriterMigrate
         $components->updateConfiguration($configOptions);
     }
 
-    public static function mergeDestinationConfiguration(array $sourceWriterConfiguration, array $destinationWriterConfiguration): array
-    {
+    public static function mergeDestinationConfiguration(
+        array $sourceWriterConfiguration,
+        array $destinationWriterConfiguration
+    ): array {
         return array_replace_recursive(
             $sourceWriterConfiguration,
             [
@@ -105,8 +109,10 @@ class GoodDataWriterMigrate
         );
     }
 
-    private function migrateGoodDataProject(array $sourceWriterConfiguration, array $destinationWriterConfiguration): void
-    {
+    private function migrateGoodDataProject(
+        array $sourceWriterConfiguration,
+        array $destinationWriterConfiguration
+    ): void {
         $sourceGoodDataClient = new GoodDataClient(
             $this->getGoodDataHostForKbcStack($this->sourceProjectStackId)
         );

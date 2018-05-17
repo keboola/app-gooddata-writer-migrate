@@ -29,7 +29,9 @@ class GoodDataProjectMigrate
             ],
         ];
         $exportResult = $sourceProjectClient->post($exportUri, $params);
-        if (empty($exportResult['exportArtifact']['token']) || empty($exportResult['exportArtifact']['status']['uri'])) {
+        if (empty($exportResult['exportArtifact']['token']) ||
+            empty($exportResult['exportArtifact']['status']['uri'])
+        ) {
             throw new UserException(
                 sprintf('Project export failed: %s', json_encode($exportResult))
             );
