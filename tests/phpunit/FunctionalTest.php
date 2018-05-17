@@ -29,6 +29,9 @@ class FunctionalTest extends TestCase
     /** @var Client */
     private $sourceSapiClient;
 
+    /** @var Client */
+    private $destinationSapiClient;
+
     /** @var Temp */
     private $temp;
 
@@ -47,12 +50,12 @@ class FunctionalTest extends TestCase
             'token' => getenv('TEST_SOURCE_KBC_TOKEN'),
         ]);
 
-        $destinationSapiClient = new Client([
+        $this->destinationSapiClient = new Client([
             'url' => getenv('TEST_DEST_KBC_URL'),
             'token' => getenv('TEST_DEST_KBC_TOKEN'),
         ]);
         $destinationSyrupUrl = Utils::getKeboolaServiceUrl(
-            $destinationSapiClient->indexAction()['services'],
+            $this->destinationSapiClient->indexAction()['services'],
             GoodDataWriterMigrate::SYRUP_SERVICE_ID
         );
         $this->destinationGoodDataWriterClient = GoodDataWriterClientV2::factory([
@@ -64,6 +67,7 @@ class FunctionalTest extends TestCase
         $this->temp->initRunFolder();
 
         self::cleanupBuckets($this->sourceSapiClient);
+        self::cleanupBuckets($this->destinationSapiClient);
         self::cleanupGoodDataWriters($this->destinationGoodDataWriterClient);
         self::cleanupGoodDataWriters($this->sourceGoodDataWriterClient);
     }
@@ -87,18 +91,57 @@ class FunctionalTest extends TestCase
     public function testSuccessfulRun(): void
     {
         // prepare initials setup in project
-        $sourceBucketId= $this->sourceSapiClient->createBucket(self::TEST_BUCKET_NAME, Client::STAGE_IN);
-        $this->sourceSapiClient->createTableAsync(
+        $sourceBucketId = $this->sourceSapiClient->createBucket(self::TEST_BUCKET_NAME, Client::STAGE_IN);
+        $sourceTableId = $this->sourceSapiClient->createTableAsync(
             $sourceBucketId,
             self::TEST_TABLE_NAME,
             new CsvFile(__DIR__ . '/data/radio.csv')
         );
+        // just create a same bucket and table in dest project to simulate migration of data
+        // which is not handled by this component
+        $destBucketId = $this->destinationSapiClient->createBucket(self::TEST_BUCKET_NAME, Client::STAGE_IN);
+        $this->destinationSapiClient->createTableAsync(
+            $destBucketId,
+            self::TEST_TABLE_NAME,
+            new CsvFile(__DIR__ . '/data/radio.csv')
+        );
 
+        // setup writer in source project
         $writerId = uniqid('test');
         $this->sourceGoodDataWriterClient->createWriter($writerId, [
             'authToken' => GoodDataWriterMigrate::WRITER_AUTH_TOKEN_DEMO,
         ]);
         $sourceWriter = $this->sourceGoodDataWriterClient->getWriter($writerId);
+
+        $this->sourceGoodDataWriterClient->addTableToWriter(
+            $writerId,
+            $sourceTableId
+        );
+        $this->sourceGoodDataWriterClient->updateWriterTableConfiguration(
+            $writerId,
+            $sourceTableId,
+            [
+                'export' => true,
+                'columns' => [
+                    'id' => [
+                        'type' => 'CONNECTION_POINT',
+                        'name' => 'id',
+                    ],
+                    'text' => [
+                        'type' => 'ATTRIBUTE',
+                        'name' => 'text',
+                    ],
+                    'tag' => [
+                        'type' => 'ATTRIBUTE',
+                        'name' => 'tag',
+                    ],
+                ],
+            ]
+        );
+
+        $this->sourceGoodDataWriterClient->updateWriterModel($writerId, $sourceWriter['project']['pid']);
+        $this->sourceGoodDataWriterClient->loadWriterDataMulti($writerId, $sourceWriter['project']['pid']);
+        $sourceWriterTables = $this->sourceGoodDataWriterClient->listWriterTables($writerId);
 
         // prepare config
         $fileSystem = new Filesystem();
@@ -112,16 +155,31 @@ class FunctionalTest extends TestCase
             ])
         );
 
-        // execute component
+        // perform migration
         $process = $this->createTestProcess();
         $process->mustRun();
 
-        // check results
+        // check migration results
         $this->assertEquals(0, $process->getExitCode());
         $this->assertEmpty($process->getErrorOutput());
 
         $destWriter = $this->destinationGoodDataWriterClient->getWriter($writerId);
+        $destWriterTables = $this->destinationGoodDataWriterClient->listWriterTables($writerId);
         $this->assertEquals($sourceWriter['project']['authToken'], $destWriter['project']['authToken']);
+        $this->assertEquals('ready', $sourceWriter['status']);
+        $this->assertEquals('ready', $destWriter['status']);
+        $this->assertNotEquals($sourceWriter['project']['pid'], $destWriter['project']['pid']);
+        $this->assertNotEquals($sourceWriter['user']['id'], $destWriter['project']['id']);
+
+        $this->assertCount(1, $sourceWriterTables);
+        $this->assertCount(1, $destWriterTables);
+        $this->assertEquals($sourceTableId, $sourceWriterTables[0]['tableId']);
+        $this->assertEquals($sourceTableId, $destWriterTables[0]['tableId']);
+        $this->assertTrue($sourceWriterTables[0]['export']);
+        $this->assertTrue($sourceWriterTables[0]['isExported']);
+        $this->assertTrue($destWriterTables[0]['export']);
+        $this->assertTrue($destWriterTables[0]['isExported']);
+        $this->assertEquals($sourceWriterTables[0]['columns'], $destWriterTables[0]['columns']);
     }
 
     private function createTestProcess(): Process

@@ -32,15 +32,7 @@ class GoodDataWriterClientV2
             null,
             json_encode($extendedParams)
         );
-        $job = $this->client->send($request)->json();
-
-        if (!isset($job['url'])) {
-            throw new UserException(
-                'Create writer job returned unexpected result: ' . json_encode($job, JSON_PRETTY_PRINT)
-            );
-        }
-
-        return $this->client->waitForJob($job['url']);
+        return $this->waitForJob($request);
     }
 
     public function getWriter(string $writerId): array
@@ -59,5 +51,64 @@ class GoodDataWriterClientV2
     {
         $request = $this->client->delete(sprintf('v2/%s', $id));
         $this->client->send($request);
+    }
+
+    public function addTableToWriter(string $writer, string $tableId): void
+    {
+        $request = $this->client->post(
+            sprintf('v2/%s/tables', $writer),
+            null,
+            json_encode([
+                'tableId' => $tableId,
+            ])
+        );
+        $this->client->send($request);
+    }
+
+    public function updateWriterTableConfiguration(string $writerId, string $tableId, array $tableConfig): void
+    {
+        $request = $this->client->patch(
+            sprintf('v2/%s/tables/%s', $writerId, $tableId),
+            null,
+            json_encode($tableConfig)
+        );
+        $this->client->send($request);
+    }
+
+    public function updateWriterModel(string $writerId, string $pid): void
+    {
+        $request = $this->client->post(
+            sprintf('v2/%s/projects/%s/update', $writerId, $pid)
+        );
+        $this->waitForJob($request);
+    }
+
+    public function loadWriterDataMulti(string $writerId, string $pid): void
+    {
+        $request = $this->client->post(
+            sprintf('v2/%s/projects/%s/load-multi', $writerId, $pid)
+        );
+        $this->waitForJob($request);
+    }
+
+    public function listWriterTables(string $writerId): array
+    {
+        $request = $this->client->get(
+            sprintf('v2/%s/tables?include=columns', $writerId)
+        );
+        return $this->client->send($request)->json();
+    }
+
+    private function waitForJob(\Guzzle\Http\Message\RequestInterface $request)
+    {
+        $job = $this->client->send($request)->json();
+
+        if (!isset($job['url'])) {
+            throw new UserException(
+                'Unexpected result of job enqueue: ' . json_encode($job, JSON_PRETTY_PRINT)
+            );
+        }
+
+        return $this->client->waitForJob($job['url']);
     }
 }
