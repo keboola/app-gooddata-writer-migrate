@@ -41,7 +41,7 @@ class GoodDataWriterMigrate
     /** @var string */
     private $destinationProjectStackId;
 
-    /** @var string */
+    /** @var LoggerInterface */
     private $logger;
 
     public function __construct(
