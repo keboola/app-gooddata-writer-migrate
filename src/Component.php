@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Keboola\GoodDataWriterMigrate;
 
 use Keboola\Component\BaseComponent;
+use Keboola\Component\UserException;
 use Keboola\StorageApi\Client;
+use Keboola\StorageApi\ClientException;
 use Keboola\StorageApi\Components;
 use Keboola\StorageApi\Options\Components\ListComponentConfigurationsOptions;
 
@@ -21,7 +23,11 @@ class Component extends BaseComponent
             'url' => $config->getSourceProjectUrl(),
             'token' => $config->getSourceProjectToken(),
         ]);
-        $sourceTokenInfo = $sourceProjectClient->verifyToken();
+        try {
+            $sourceTokenInfo = $sourceProjectClient->verifyToken();
+        } catch (ClientException $e) {
+            throw new UserException('Cannot authorize source project: ' . $e->getMessage(), $e->getCode(), $e);
+        }
 
         $destinationProjectClient = $this->createStorageClient([
             'url' => getenv('KBC_URL'),

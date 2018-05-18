@@ -181,7 +181,13 @@ class GoodDataWriterMigrate
 
     private function getSourceWriterConfiguration(string $writerId): array
     {
-        return $this->sourceProjecGoodDataWriterClient->getWriter($writerId);
+        try {
+            return $this->sourceProjecGoodDataWriterClient->getWriter($writerId);
+        } catch (ClientErrorResponseException $e) {
+            throw new UserException(
+                sprintf('Cannot read source writer: %s', (string) $e->getResponse()->getBody())
+            );
+        }
     }
 
     private function getCreatedWriterSapiConfiguration(string $writerId): array
