@@ -5,8 +5,8 @@
 Application for migrating GoodData writers between project's and regions.
 It migrates all GoodData writers in source project into project where the application is executed.
 
-- It migrates whole GoodData writer configuration. Ids are preserved.
-- It migrates the associated GoodData projects with all data.
+- It migrates whole GoodData writer configuration. Ids of configurations are preserved.
+- It clones the associated GoodData projects with all data and settings (Dashboards, reports, metrics, data sets).
 - It doesn't migrate GoodData project users
 - It doesn't migrate GoodData writers source data. [Project restore](https://github.com/keboola/app-project-restore) should be used for data migration.
 - Application requires token with `admin` privileges
