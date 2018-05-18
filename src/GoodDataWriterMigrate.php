@@ -11,6 +11,7 @@ use Keboola\StorageApi\Components;
 use \Keboola\GoodData\Client as GoodDataClient;
 use Keboola\StorageApi\Options\Components\Configuration;
 use Keboola\StorageApi\Options\Components\ConfigurationRow;
+use Psr\Log\LoggerInterface;
 
 class GoodDataWriterMigrate
 {
@@ -40,18 +41,23 @@ class GoodDataWriterMigrate
     /** @var string */
     private $destinationProjectStackId;
 
+    /** @var string */
+    private $logger;
+
     public function __construct(
         Client $destinationProjectSapiClient,
         GoodDataWriterClientV2 $destinationProjectGoodDataWriterClient,
         GoodDataWriterClientV2 $sourceProjectGoodDataWriterClient,
         string $destinationProjectStackId,
-        string $sourceProjectStackId
+        string $sourceProjectStackId,
+        LoggerInterface $logger
     ) {
         $this->destinationProjectSapiClient = $destinationProjectSapiClient;
         $this->destinationProjectGoodDataWriterClient = $destinationProjectGoodDataWriterClient;
         $this->sourceProjecGoodDataWriterClient = $sourceProjectGoodDataWriterClient;
         $this->destinationProjectStackId = $destinationProjectStackId;
         $this->sourceProjectStackId = $sourceProjectStackId;
+        $this->logger = $logger;
     }
 
     public function migrateWriter(array $sourceWriterSapiConfiguration): void
@@ -149,7 +155,7 @@ class GoodDataWriterMigrate
             $destinationWriterSapiConfiguration['configuration']['user']['password']
         );
 
-        $goodDataMigrate = new GoodDataProjectMigrate();
+        $goodDataMigrate = new GoodDataProjectMigrate($this->logger);
         $goodDataMigrate->migrate(
             $sourceGoodDataClient,
             $sourceWriterSapiConfiguration['configuration']['project']['pid'],
@@ -165,6 +171,7 @@ class GoodDataWriterMigrate
             $this->destinationProjectGoodDataWriterClient->createWriter($writerId, [
                 'authToken' => $authToken,
             ]);
+            $this->logger->info('New writer created');
         } catch (ClientErrorResponseException $e) {
             throw new UserException(
                 sprintf('Cannot create writer: %s', (string) $e->getResponse()->getBody())

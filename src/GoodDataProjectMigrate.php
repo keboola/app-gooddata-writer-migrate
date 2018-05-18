@@ -6,9 +6,17 @@ namespace Keboola\GoodDataWriterMigrate;
 
 use Keboola\Component\UserException;
 use Keboola\GoodData\Client;
+use Psr\Log\LoggerInterface;
 
 class GoodDataProjectMigrate
 {
+    /** @var LoggerInterface  */
+    private $logger;
+
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
 
     public function migrate(
         Client $sourceProjectClient,
@@ -17,6 +25,7 @@ class GoodDataProjectMigrate
         string $destinationProjectPid,
         string $destinationProjectUser
     ): void {
+        $this->logger->info('Exporting source GoodData project');
         $exportUri = "/gdc/md/$sourceProjectPid/maintenance/export";
         $params = [
             'exportProject' => [
@@ -38,6 +47,7 @@ class GoodDataProjectMigrate
         }
         $sourceProjectClient->pollTask($exportResult['exportArtifact']['status']['uri']);
 
+        $this->logger->info('Importing new GoodData project');
         $importUri = "/gdc/md/$destinationProjectPid/maintenance/import";
         $importResult = $destinationProjectClient->post($importUri, [
             'importProject' => [

@@ -33,13 +33,15 @@ class Component extends BaseComponent
             GoodDataWriterClientV2::createFromStorageClient($destinationProjectClient),
             GoodDataWriterClientV2::createFromStorageClient($sourceProjectClient),
             parse_url($destinationProjectClient->getApiUrl(), PHP_URL_HOST),
-            parse_url($sourceProjectClient->getApiUrl(), PHP_URL_HOST)
+            parse_url($sourceProjectClient->getApiUrl(), PHP_URL_HOST),
+            $logger
         );
 
         $logger->info(sprintf(
-            'Migrating GoodData writers from project %s (%d)',
+            'Migrating GoodData writers from project %s (%d) at %s',
             $sourceTokenInfo['owner']['name'],
-            $sourceTokenInfo['owner']['id']
+            $sourceTokenInfo['owner']['id'],
+            $config->getSourceProjectUrl()
         ));
 
         $writersToMigrate = (new Components($sourceProjectClient))->listComponentConfigurations(
