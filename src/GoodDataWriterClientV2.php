@@ -32,7 +32,7 @@ class GoodDataWriterClientV2
             self::SYRUP_SERVICE_ID
         );
         return self::factory([
-            'url' => sprintf("%s/gooddata-writer", $sourceSyrupUrl),
+            'url' => sprintf('%s/gooddata-writer', $sourceSyrupUrl),
             'token' => $sapiClient->getTokenString(),
         ]);
     }
